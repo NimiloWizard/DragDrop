@@ -1,86 +1,83 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <style>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="styles.css">
+    <title>Matching Game</title>
+
+    <style>
         /* styles.css */
 
-            body {
-                font-family: Arial, sans-serif;
-                text-align: center;
-            }
+        body {
+            font-family: Arial, sans-serif;
+            text-align: center;
+        }
 
-            .container {
-                display: flex;
-                flex-wrap: wrap;
-                justify-content: center;
-                gap: 10px;
-            }
+        .container {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            gap: 10px;
+        }
 
-            .tile {
-                width: 100px;
-                height: 100px;
-                background-color: #3498db;
-                color: #fff;
-                text-align: center;
-                line-height: 100px;
-                font-size: 18px;
-                cursor: pointer;
-            }
+        .tile {
+            margin-top: 300px;
+            width: 100px;
+            height: 100px;
+            background-color: #3498db;
+            color: #fff;
+            text-align: center;
+            line-height: 100px;
+            font-size: 18px;
+            cursor: pointer;
+            user-drag: none; /* Disable native drag behavior on some mobile devices */
+            touch-action: manipulation; /* Improve touch responsiveness */
+            position: absolute;
+        }
 
-            .drop-zone {
-                width: 120px;
-                height: 120px;
-                background-color: #e74c3c;
-                margin: 10px;
-                display: inline-block;
-                cursor: pointer;
-            }
+        .drop-zone {
+            margin-top: 100px;
+            width: 120px;
+            height: 120px;
+            background-color: #e74c3c;
+            margin: 10px;
+            display: inline-block;
+            cursor: pointer;
+            position: relative;
+        }
 
-            #message {
-                display: none;
-                font-size: 24px;
-                color: green;
-            }
-
+        #message {
+            display: none;
+            font-size: 24px;
+            color: green;
+        }
     </style>
 </head>
 <body>
     <div class="container">
-        <div class="tile" data-match="1" draggable="true">Tile 1</div>
-        <div class="tile" data-match="2" draggable="true">Tile 2</div>
+        <div class="tile" data-match="1">Tile 1</div>
+        <div class="tile" data-match="2">Tile 2</div>
         <!-- Add more tiles as needed -->
     </div>
     <div class="drop-zone" data-target="1"></div>
     <div class="drop-zone" data-target="2"></div>
     <!-- Add more drop zones as needed -->
     <div id="message">Congratulations! You've matched all tiles!</div>
-    <div id="Incorrectmessage">Incorrect! Keep Trying!</div>
 
-    <button id="shuffleButton">Shuffle Tiles</button>
-    <script src="script.js"></script>
     <script>
-        // script.js
-
         const tiles = document.querySelectorAll('.tile');
         const dropZones = document.querySelectorAll('.drop-zone');
         const message = document.getElementById('message');
-        const shuffleButton = document.getElementById('shuffleButton');
-        const Incorrectmessage = document.getElementById('Incorrectmessage');
 
-        let matchedTiles = 0;
-        let draggedTile = null;
-        let touchedTile = null; // New variable to track touched tile
+        let selectedTile = null;
 
         tiles.forEach(tile => {
-            tile.addEventListener('dragstart', dragStart);
-            tile.addEventListener('dragend', dragEnd);
             tile.addEventListener('touchstart', touchStart);
             tile.addEventListener('touchmove', touchMove);
             tile.addEventListener('touchend', touchEnd);
-            tile.addEventListener('mousedown', mouseDown); // Add mouse event for desktop
         });
 
-        // Add event listeners for drop zones
         dropZones.forEach(dropZone => {
             dropZone.addEventListener('dragover', dragOver);
             dropZone.addEventListener('dragenter', dragEnter);
@@ -88,16 +85,31 @@
             dropZone.addEventListener('drop', dragDrop);
         });
 
-        // Shuffle tiles when the "Shuffle Tiles" button is clicked
-        shuffleButton.addEventListener('click', shuffleTiles);
-
-        function dragStart(event) {
-            draggedTile = this;
-            event.dataTransfer.setData('text/plain', ''); // Required for Firefox
+        function touchStart(event) {
+            selectedTile = this;
+            const touch = event.touches[0];
+            selectedTile.initialX = touch.clientX - selectedTile.getBoundingClientRect().left;
+            selectedTile.initialY = touch.clientY - selectedTile.getBoundingClientRect().top;
+            selectedTile.style.zIndex = 1; // Bring the selected tile to the front
+            event.preventDefault();
         }
 
-        function dragEnd() {
-            // No action needed
+        function touchMove(event) {
+            if (!selectedTile) return;
+            const touch = event.touches[0];
+            const left = touch.clientX - selectedTile.initialX;
+            const top = touch.clientY - selectedTile.initialY;
+
+            selectedTile.style.left = left + 'px';
+            selectedTile.style.top = top + 'px';
+
+            event.preventDefault();
+        }
+
+        function touchEnd() {
+            if (!selectedTile) return;
+            selectedTile.style.zIndex = ''; // Reset the z-index
+            selectedTile = null;
         }
 
         function dragOver(event) {
@@ -106,100 +118,32 @@
 
         function dragEnter(event) {
             event.preventDefault();
-            this.classList.add('hovered');
         }
 
         function dragLeave() {
-            this.classList.remove('hovered');
+            // No action needed
         }
 
         function dragDrop(event) {
             event.preventDefault();
             const target = this;
 
-            if (draggedTile.getAttribute('data-match') === target.getAttribute('data-target')) {
-                draggedTile.style.visibility = 'hidden';
-                target.style.backgroundColor = 'green';
-                matchedTiles++;
+            const matched = selectedTile.getAttribute('data-match') === target.getAttribute('data-target');
 
-                if (matchedTiles === tiles.length) {
-                    message.style.display = 'block';
-                }
-            } else if (!draggedTile.getAttribute('data-match') === target.getAttribute('data-target')) {
-                Incorrectmessage.style.display  = 'block';
+            if (matched) {
+                selectedTile.style.visibility = 'hidden';
+                target.style.backgroundColor = 'green';
             }
 
-            this.classList.remove('hovered');
+            checkWinCondition();
         }
 
-        function touchStart(event) {
-            touchedTile = this;
-            const touch = event.touches[0];
-            touchedTile.initialX = touch.clientX - parseFloat(getComputedStyle(touchedTile).left);
-            touchedTile.initialY = touch.clientY - parseFloat(getComputedStyle(touchedTile).top);
-            event.preventDefault();
+        function checkWinCondition() {
+            const remainingTiles = [...tiles].filter(tile => tile.style.visibility !== 'hidden');
+            if (remainingTiles.length === 0) {
+                message.style.display = 'block';
+            }
         }
-
-        function touchMove(event) {
-            if (!touchedTile) return;
-            const touch = event.touches[0];
-            const left = touch.clientX - touchedTile.initialX;
-            const top = touch.clientY - touchedTile.initialY;
-
-            touchedTile.style.left = left + 'px';
-            touchedTile.style.top = top + 'px';
-
-            event.preventDefault();
-        }
-
-        function touchEnd() {
-            touchedTile = null;
-        }
-
-        // Handle mouse events for desktop
-        function mouseDown(event) {
-            touchedTile = this;
-            const mouseX = event.clientX - parseFloat(getComputedStyle(touchedTile).left);
-            const mouseY = event.clientY - parseFloat(getComputedStyle(touchedTile).top);
-
-            // Store initial mouse offset for later calculations
-            touchedTile.initialX = mouseX;
-            touchedTile.initialY = mouseY;
-
-            document.addEventListener('mousemove', mouseMove);
-            document.addEventListener('mouseup', mouseUp);
-
-            event.preventDefault();
-        }
-
-        function mouseMove(event) {
-            if (!touchedTile) return;
-            const mouseX = event.clientX - touchedTile.initialX;
-            const mouseY = event.clientY - touchedTile.initialY;
-
-            touchedTile.style.left = mouseX + 'px';
-            touchedTile.style.top = mouseY + 'px';
-
-            event.preventDefault();
-        }
-
-        function mouseUp() {
-            if (!touchedTile) return;
-            document.removeEventListener('mousemove', mouseMove);
-            document.removeEventListener('mouseup', mouseUp);
-            touchedTile = null;
-        }
-
-        function shuffleTiles() {
-            const container = document.querySelector('.container');
-            const tilesArray = Array.from(tiles);
-
-            tilesArray.sort(() => Math.random() - 0.5);
-
-            tilesArray.forEach(tile => {
-                container.appendChild(tile);
-            });
-        }
-
-        // Reset game when "Shuffle Tiles" button is clicked
-        shuffle
+    </script>
+</body>
+</html>

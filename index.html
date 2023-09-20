@@ -1,99 +1,193 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <link rel="stylesheet" href="styles.css">
-    <style>
-        #game-container {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    height: 100vh;
-}
+    <title>Drag and Drop Game</title>
 
-.tile {
-    width: 100px;
-    height: 100px;
-    background-color: lightblue;
-    text-align: center;
-    line-height: 100px;
-    cursor: pointer;
-    user-drag: none; /* Disable default drag behavior */
-}
+      <style>
+                                body {
+                font-family: Arial, sans-serif;
+                text-align: center;
+            }
 
-.drop-zone {
-    width: 120px;
-    height: 120px;
-    background-color: lightgreen;
-    text-align: center;
-    line-height: 120px;
-}
+            h1 {
+                margin-top: 20px;
+            }
 
-    </style>
+            .game-container {
+                display: flex;
+                justify-content: center;
+                align-items: center;
+                margin: 20px;
+            }
+
+            .tile {
+                width: 80px;
+                height: 80px;
+                background-color: #3498db;
+                color: white;
+                text-align: center;
+                line-height: 80px;
+                margin: 10px;
+                cursor: pointer;
+            }
+
+            .drop-zone {
+                width: 100px;
+                height: 100px;
+                background-color: #e74c3c;
+                margin: 10px;
+                display: flex;
+                justify-content: center;
+                align-items: center;
+            }
+
+            button {
+                margin-top: 20px;
+                padding: 10px 20px;
+                background-color: #3498db;
+                color: white;
+                border: none;
+                cursor: pointer;
+            }
+
+            #message {
+                font-weight: bold;
+            }
+
+      </style>
 </head>
 <body>
-    <div id="game-container">
-        <div id="tile" class="tile">Tile</div>
-        <div id="drop-zone" class="drop-zone">Drop Zone</div>
+    <h1>Drag and Drop Game</h1>
+    <div class="game-container">
+        <div id="tile1" class="tile" draggable="true" data-value="A">Tile A</div>
+        <div id="tile2" class="tile" draggable="true" data-value="B">Tile B</div>
+        <div class="drop-zone" data-drop-value="A"></div>
+        <div class="drop-zone" data-drop-value="B"></div>
     </div>
-    <div id="message"></div>
+    <button id="shuffle-btn">Shuffle</button>
+    <div id="message" style="display: none;">Congratulations </div>
     <script src="script.js"></script>
-    <script>
-        const tile = document.getElementById('tile');
-const dropZone = document.getElementById('drop-zone');
+
+   
+     <script>
+             const tiles = document.querySelectorAll('.tile');
+const dropZones = document.querySelectorAll('.drop-zone');
 const message = document.getElementById('message');
+const shuffleButton = document.getElementById('shuffleButton');
 
-let isDragging = false;
+let draggedTile = null;
 
-tile.addEventListener('touchstart', (e) => {
-    isDragging = true;
-    const touch = e.touches[0];
-    const offsetX = touch.clientX - tile.getBoundingClientRect().left;
-    const offsetY = touch.clientY - tile.getBoundingClientRect().top;
-
-    tile.style.transition = 'none';
-    tile.style.transform = `translate(${offsetX}px, ${offsetY}px)`;
+tiles.forEach(tile => {
+    tile.addEventListener('dragstart', dragStart);
+    tile.addEventListener('dragend', dragEnd);
+    tile.addEventListener('touchstart', touchStart);
+    tile.addEventListener('touchmove', touchMove);
+    tile.addEventListener('touchend', touchEnd);
 });
 
-document.addEventListener('touchmove', (e) => {
-    if (isDragging) {
-        e.preventDefault();
-        const touch = e.touches[0];
-        const offsetX = touch.clientX - tile.getBoundingClientRect().left;
-        const offsetY = touch.clientY - tile.getBoundingClientRect().top;
-
-        tile.style.transform = `translate(${offsetX}px, ${offsetY}px)`;
-    }
+// Add event listeners for drop zones
+dropZones.forEach(dropZone => {
+    dropZone.addEventListener('dragover', dragOver);
+    dropZone.addEventListener('dragenter', dragEnter);
+    dropZone.addEventListener('dragleave', dragLeave);
+    dropZone.addEventListener('drop', dragDrop);
 });
 
-document.addEventListener('touchend', () => {
-    if (isDragging) {
-        isDragging = false;
+// Shuffle tiles when the "Shuffle Tiles" button is clicked
+shuffleButton.addEventListener('click', shuffleTiles);
 
-        const tileRect = tile.getBoundingClientRect();
-        const dropZoneRect = dropZone.getBoundingClientRect();
+function dragStart(event) {
+    draggedTile = this;
+    event.dataTransfer.setData('text/plain', ''); // Required for Firefox
+}
 
-        if (
-            tileRect.left >= dropZoneRect.left &&
-            tileRect.right <= dropZoneRect.right &&
-            tileRect.top >= dropZoneRect.top &&
-            tileRect.bottom <= dropZoneRect.bottom
-        ) {
-            message.textContent = 'Congratulations! You completed this mission';
-        } else {
-            message.textContent = 'Incorrect, Please keep trying!';
+function dragEnd() {
+    // No action needed
+}
+
+function dragOver(event) {
+    event.preventDefault();
+}
+
+function dragEnter(event) {
+    event.preventDefault();
+    this.classList.add('hovered');
+}
+
+function dragLeave() {
+    this.classList.remove('hovered');
+}
+
+function dragDrop(event) {
+    event.preventDefault();
+    const target = this;
+
+    if (draggedTile.getAttribute('data-value') === target.getAttribute('data-drop-value')) {
+        draggedTile.style.visibility = 'hidden';
+        target.style.backgroundColor = 'green';
+        matchedTiles++;
+
+        if (matchedTiles === tiles.length) {
+           
+            message.style.display = 'block';
         }
-
-        tile.style.transition = 'transform 0.3s';
-        tile.style.transform = 'none';
     }
-});
 
-// Reset the game
-tile.addEventListener('click', () => {
-    message.textContent = '';
-});
+    this.classList.remove('hovered');
+}
 
-    </script>
+function touchStart(event) {
+    draggedTile = this;
+    const touch = event.touches[0];
+    draggedTile.initialX = touch.clientX - parseFloat(getComputedStyle(draggedTile).left);
+    draggedTile.initialY = touch.clientY - parseFloat(getComputedStyle(draggedTile).top);
+    event.preventDefault();
+}
+
+function touchMove(event) {
+    if (!draggedTile) return;
+    const touch = event.touches[0];
+    const left = touch.clientX - draggedTile.initialX;
+    const top = touch.clientY - draggedTile.initialY;
+
+    draggedTile.style.left = left + 'px';
+    draggedTile.style.top = top + 'px';
+
+    event.preventDefault();
+}
+
+function touchEnd() {
+    draggedTile = null;
+}
+
+function shuffleTiles() {
+    const container = document.querySelector('.container');
+    const tilesArray = Array.from(tiles);
+
+    tilesArray.sort(() => Math.random() - 0.5);
+
+    tilesArray.forEach(tile => {
+        container.appendChild(tile);
+    });
+}
+
+// Reset game when "Shuffle Tiles" button is clicked
+shuffleButton.addEventListener('click', function () {
+    matchedTiles = 0;
+    tiles.forEach(tile => {
+        tile.style.visibility = 'visible';
+        tile.style.backgroundColor = '#3498db';
+    });
+    dropZones.forEach(dropZone => {
+        dropZone.style.backgroundColor = '#e74c3c';
+    });
+    message.style.display = 'none';
+});
+     </script> 
+
+
 </body>
 </html>

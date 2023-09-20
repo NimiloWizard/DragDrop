@@ -37,7 +37,6 @@
         }
 
         .drop-zone {
-            margin-top: 100px;
             width: 120px;
             height: 120px;
             background-color: #e74c3c;
@@ -71,6 +70,8 @@
         const message = document.getElementById('message');
 
         let selectedTile = null;
+        let offsetX = 0;
+        let offsetY = 0;
 
         tiles.forEach(tile => {
             tile.addEventListener('touchstart', touchStart);
@@ -88,17 +89,21 @@
         function touchStart(event) {
             selectedTile = this;
             const touch = event.touches[0];
-            selectedTile.initialX = touch.clientX - selectedTile.getBoundingClientRect().left;
-            selectedTile.initialY = touch.clientY - selectedTile.getBoundingClientRect().top;
-            selectedTile.style.zIndex = 1; // Bring the selected tile to the front
+            const rect = selectedTile.getBoundingClientRect();
+
+            offsetX = touch.clientX - rect.left;
+            offsetY = touch.clientY - rect.top;
+
+            selectedTile.style.zIndex = 1;
             event.preventDefault();
         }
 
         function touchMove(event) {
             if (!selectedTile) return;
             const touch = event.touches[0];
-            const left = touch.clientX - selectedTile.initialX;
-            const top = touch.clientY - selectedTile.initialY;
+
+            const left = touch.clientX - offsetX;
+            const top = touch.clientY - offsetY;
 
             selectedTile.style.left = left + 'px';
             selectedTile.style.top = top + 'px';
@@ -108,7 +113,7 @@
 
         function touchEnd() {
             if (!selectedTile) return;
-            selectedTile.style.zIndex = ''; // Reset the z-index
+            selectedTile.style.zIndex = '';
             selectedTile = null;
         }
 

@@ -9,86 +9,128 @@
     <style>
         /* styles.css */
 
-        body {
-            font-family: Arial, sans-serif;
-            text-align: center;
-        }
+            body {
+                font-family: Arial, sans-serif;
+                text-align: center;
+            }
 
-        .container {
-            display: flex;
-            flex-wrap: wrap;
-            justify-content: center;
-            gap: 10px;
-        }
+            .container {
+                display: flex;
+                flex-wrap: wrap;
+                justify-content: center;
+                gap: 10px;
+            }
 
-        .tile {
-           
-            width: 100px;
-            height: 100px;
-            background-color: #3498db;
-            color: #fff;
-            text-align: center;
-            line-height: 100px;
-            font-size: 18px;
-            cursor: pointer;
-            user-drag: none; /* Disable native drag behavior on some mobile devices */
-            touch-action: manipulation; /* Improve touch responsiveness */
-            position: absolute;
-        }
+            .tile {
+                width: 100px;
+                height: 100px;
+                background-color: #3498db;
+                color: #fff;
+                text-align: center;
+                line-height: 100px;
+                font-size: 18px;
+                cursor: pointer;
+            }
 
-        .drop-zone {
-            margin-top: 250px !important;
-            width: 120px;
-            height: 120px;
-            background-color: #e74c3c;
-            margin: 10px;
-            display: inline-block;
-            cursor: pointer;
-            position: relative;
-        }
+            .drop-zone {
+                width: 120px;
+                height: 120px;
+                background-color: #e74c3c;
+                margin: 10px;
+                display: inline-block;
+                cursor: pointer;
+            }
 
-        #message {
-            display: none;
-            font-size: 24px;
-            color: green;
-        }
+            #message {
+                display: none;
+                font-size: 24px;
+                color: green;
+            }
+
     </style>
 </head>
 <body>
     <div class="container">
-        <div class="tile" data-match="1">Tile 1</div>
-        <div class="tile" data-match="2">Tile 2</div>
+        <div class="tile" data-match="1" draggable="true">Tile 1</div>
+        <div class="tile" data-match="2" draggable="true">Tile 2</div>
         <!-- Add more tiles as needed -->
     </div>
     <div class="drop-zone" data-target="1"></div>
     <div class="drop-zone" data-target="2"></div>
     <!-- Add more drop zones as needed -->
     <div id="message">Congratulations! You've matched all tiles!</div>
-
+    <button id="shuffleButton">Shuffle Tiles</button>
+    <script src="script.js"></script>
     <script>
-        const tiles = document.querySelectorAll('.tile');
-        const dropZones = document.querySelectorAll('.drop-zone');
-        const message = document.getElementById('message');
+      // script.js
 
-        let selectedTile = null;
-        let offsetX = 0;
-        let offsetY = 0;
+const tiles = document.querySelectorAll('.tile');
+const dropZones = document.querySelectorAll('.drop-zone');
+const message = document.getElementById('message');
+const shuffleButton = document.getElementById('shuffleButton');
 
-        tiles.forEach(tile => {
-            tile.addEventListener('touchstart', touchStart);
-            tile.addEventListener('touchmove', touchMove);
-            tile.addEventListener('touchend', touchEnd);
-        });
+let draggedTile = null;
 
-        dropZones.forEach(dropZone => {
-            dropZone.addEventListener('dragover', dragOver);
-            dropZone.addEventListener('dragenter', dragEnter);
-            dropZone.addEventListener('dragleave', dragLeave);
-            dropZone.addEventListener('drop', dragDrop);
-        });
+tiles.forEach(tile => {
+    tile.addEventListener('dragstart', dragStart);
+    tile.addEventListener('dragend', dragEnd);
+    tile.addEventListener('touchstart', touchStart);
+    tile.addEventListener('touchmove', touchMove);
+    tile.addEventListener('touchend', touchEnd);
+});
 
-        function touchStart(event) {
-            selectedTile = this;
+// Add event listeners for drop zones
+dropZones.forEach(dropZone => {
+    dropZone.addEventListener('dragover', dragOver);
+    dropZone.addEventListener('dragenter', dragEnter);
+    dropZone.addEventListener('dragleave', dragLeave);
+    dropZone.addEventListener('drop', dragDrop);
+});
+
+// Shuffle tiles when the "Shuffle Tiles" button is clicked
+shuffleButton.addEventListener('click', shuffleTiles);
+
+function dragStart(event) {
+    draggedTile = this;
+    event.dataTransfer.setData('text/plain', ''); // Required for Firefox
+}
+
+function dragEnd() {
+    // No action needed
+}
+
+function dragOver(event) {
+    event.preventDefault();
+}
+
+function dragEnter(event) {
+    event.preventDefault();
+    this.classList.add('hovered');
+}
+
+function dragLeave() {
+    this.classList.remove('hovered');
+}
+
+function dragDrop(event) {
+    event.preventDefault();
+    const target = this;
+
+    if (draggedTile.getAttribute('data-match') === target.getAttribute('data-target')) {
+        draggedTile.style.visibility = 'hidden';
+        target.style.backgroundColor = 'green';
+        matchedTiles++;
+
+        if (matchedTiles === tiles.length) {
+            message.style.display = 'block';
+        }
+    }
+
+    this.classList.remove('hovered');
+}
+
+function touchStart(event) {
+    selectedTile = this;
             const touch = event.touches[0];
             const rect = selectedTile.getBoundingClientRect();
 
@@ -97,59 +139,57 @@
 
             selectedTile.style.zIndex = 1;
             event.preventDefault();
-        }
+    draggedTile = this;
+ /*   const touch = event.touches[0];
+    draggedTile.initialX = touch.clientX - parseFloat(getComputedStyle(draggedTile).left);
+    draggedTile.initialY = touch.clientY - parseFloat(getComputedStyle(draggedTile).top);
+*/
+    event.preventDefault();
 
-        function touchMove(event) {
-            if (!selectedTile) return;
-            const touch = event.touches[0];
 
-            const left = touch.clientX - offsetX;
-            const top = touch.clientY - offsetY;
+}
 
-            selectedTile.style.left = left + 'px';
-            selectedTile.style.top = top + 'px';
+function touchMove(event) {
+    if (!draggedTile) return;
+    const touch = event.touches[0];
+    const left = touch.clientX - draggedTile.initialX;
+    const top = touch.clientY - draggedTile.initialY;
 
-            event.preventDefault();
-        }
+    draggedTile.style.left = left + 'px';
+    draggedTile.style.top = top + 'px';
 
-        function touchEnd() {
-            if (!selectedTile) return;
-            selectedTile.style.zIndex = '';
-            selectedTile = null;
-        }
+    event.preventDefault();
+}
 
-        function dragOver(event) {
-            event.preventDefault();
-        }
+function touchEnd() {
+    draggedTile = null;
+}
 
-        function dragEnter(event) {
-            event.preventDefault();
-        }
+function shuffleTiles() {
+    const container = document.querySelector('.container');
+    const tilesArray = Array.from(tiles);
 
-        function dragLeave() {
-            // No action needed
-        }
+    tilesArray.sort(() => Math.random() - 0.5);
 
-        function dragDrop(event) {
-            event.preventDefault();
-            const target = this;
+    tilesArray.forEach(tile => {
+        container.appendChild(tile);
+    });
+}
 
-            const matched = selectedTile.getAttribute('data-match') === target.getAttribute('data-target');
+// Reset game when "Shuffle Tiles" button is clicked
+shuffleButton.addEventListener('click', function () {
+    matchedTiles = 0;
+    tiles.forEach(tile => {
+        tile.style.visibility = 'visible';
+        tile.style.backgroundColor = '#3498db';
+    });
+    dropZones.forEach(dropZone => {
+        dropZone.style.backgroundColor = '#e74c3c';
+    });
+    message.style.display = 'none';
+});
 
-            if (matched) {
-                selectedTile.style.visibility = 'hidden';
-                target.style.backgroundColor = 'green';
-            }
-
-            checkWinCondition();
-        }
-
-        function checkWinCondition() {
-            const remainingTiles = [...tiles].filter(tile => tile.style.visibility !== 'hidden');
-            if (remainingTiles.length === 0) {
-                message.style.display = 'block';
-            }
-        }
     </script>
+
 </body>
 </html>

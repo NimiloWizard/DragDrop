@@ -133,7 +133,7 @@ function dragDrop(event) {
 
     this.classList.remove('hovered');
 }
-
+/*
 function touchStart(event) {
     draggedTile = this;
     const touch = event.touches[0];
@@ -141,7 +141,7 @@ function touchStart(event) {
     draggedTile.initialY = touch.clientY - parseFloat(getComputedStyle(draggedTile).top);
     event.preventDefault();
 }
-
+*/
 function touchMove(event) {
     if (!draggedTile) return;
     const touch = event.touches[0];
